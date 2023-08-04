@@ -1,4 +1,4 @@
-FROM debian:buster
+FROM debian:bullseye
 LABEL maintainer "Kyle Lucy <kmlucy@gmail.com>"
 
 RUN apt-get update -q && \

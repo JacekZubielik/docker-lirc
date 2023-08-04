@@ -1,0 +1,36 @@
+version: "3.9"
+########################### NETWORKS
+
+networks:
+  t2_proxy:
+    name: t2_proxy
+    attachable: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.90.0/24
+
+########################### SERVICES
+services:
+  lirc-evo_sabre:
+    image: ghcr.io/kmlucy/docker-lirc:latest
+    container_name: lirc-evo_sabre
+    # security_opt:
+    #   - no-new-privileges:true
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - t2_proxy
+    ports:
+      - target: 8765
+        published: 8765
+        protocol: tcp
+        mode: host
+    volumes:
+      - ./appdata/lirc:/etc/lirc
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    devices:
+      - '/dev/lirc0:/dev/lirc0:rwm'
+    labels:
+      - "traefik.enable=false"

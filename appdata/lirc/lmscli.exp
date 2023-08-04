@@ -1,0 +1,152 @@
+#!/usr/bin/expect -f
+
+# lmscli "Expect" script
+# Author:       Paul Webster
+# Version:      0.1
+# Date: 29-Mar-2014
+##
+# Simple script (with no error checking) to send Logitech Media Server (SqueezeCenter) CLI commands to control a player
+# Attempts to read parameters from Squeezelite defaults file - where syntax is
+# keyword="value"
+#
+# "Expect" and telnet are required
+# sudo apt-get install expect telnet
+# Also - if this is to be driven via infrared remote (expected use) then also install lirc
+# sudo apt-get install lirc
+#
+
+set settingsfile /etc/default/squeezelite
+
+# Defaults
+# Values here are overridden by values found in /etc/default/squeezelite (if present)
+# SBSHOST = ip address of the LMS/Squeezebox Server
+# SBSPORT = port number on LMS that cli runs on (rarely changed)
+# SLMAC = the MAC address claimed by the player to be controlled - not always the real MAC address and is specified to Squeezelite
+# SBSUSER / SBSPASS = username and password to access LMS. Usually not configured - in which case leave as is
+# - if used then make sure that the user/pass fields are URL-encoded (e.g. %20 for space)
+array set params {
+    SBSHOST     192.168.0.13
+    SBSPORT     9090
+    SLMAC       02:42:c0:a8:5a:14
+    SBSUSER     user
+    SBSPASS     pass
+}
+
+# Override the defaults that are in this script with the ones from the Squeezelite settings
+if {[file exists "$settingsfile"]} {
+    set fp [open "$settingsfile" r]
+    set file_data [read $fp]
+    close $fp
+
+    # get lines
+    set data [split $file_data "\n"]
+    foreach line $data {
+        #parse lines for config data
+        if {[regexp {^(\w+)\s*=\s*[\"|](.*)[\"|]} $line -> name value]} {
+            # puts "found name of \"$name\" with value \"$value\""
+            set params($name) $value
+        }
+    }
+}
+
+# puts "settings: host:\"$params(SBSHOST)\" and player MAC:\"$params(SLMAC)\""
+# The settings are now in place
+
+set arg1 [lindex $argv 0]
+set arg2 [lindex $argv 1]
+
+# puts "recieved arguments of \"$arg1\" and \"$arg2\""
+spawn telnet $params(SBSHOST) $params(SBSPORT)
+expect "Escape character is *"
+send "login $params(SBSUSER) $params(SBSPASS)\n"
+expect "login user"
+
+
+switch $arg1 {
+
+pause   {
+                send "$params(SLMAC) pause\n"
+                expect "* pause"
+        }
+
+bb      {
+                send "$params(SLMAC) time -10\n"
+                expect "* time"
+        }
+
+ff      {
+                send "$params(SLMAC) time +10\n"
+                expect "* time"
+        }
+
+muteoff {
+                send "$params(SLMAC) mixer muting 0\n"
+                expect "* mixer muting"
+        }
+
+muteon  {
+                send "$params(SLMAC) mixer muting 1\n"
+                expect "* mixer muting"
+        }
+
+next    {
+                send "$params(SLMAC) playlist index +1\n"
+                expect "* playlist index"
+        }
+
+prev    {
+                send "$params(SLMAC) playlist index -1\n"
+                expect "* playlist index"
+        }
+
+power   {
+                send "$params(SLMAC) power\n"
+                expect "* power"
+        }
+
+voldown {
+                send "$params(SLMAC) mixer volume -2\n"
+                expect "* mixer volume"
+        }
+
+volup   {
+                send "$params(SLMAC) mixer volume +2\n"
+                expect "* mixer volume"
+        }
+
+shuffle {
+                send "$params(SLMAC) playlist shuffle\n"
+                expect "* playlist shuffle"
+        }
+
+repeat  {
+                send "$params(SLMAC) playlist repeat\n"
+                expect "* playlist repeat"
+        }
+
+stop    {
+                send "$params(SLMAC) stop\n"
+                expect "* stop"
+        }
+
+ok      {       #Restore to base values
+                send "$params(SLMAC) playlist repeat 0 1\n"
+                expect "* playlist repeat"
+                send "$params(SLMAC) playlist shuffle 0\n"
+                expect "* playlist shuffle"
+                send "$params(SLMAC) mixer volume 50\n"
+                expect "* mixer volume"
+                send "$params(SLMAC) mixer muting 0\n"
+                expect "* mixer muting"
+                send "$params(SLMAC) power 1\n"
+                expect "* power"
+}
+
+
+default {puts "Unknown command issued to lmscli"}
+
+}
+# End of switch (do not put on same line as the closing brace)
+
+send "exit\n"
+expect eof

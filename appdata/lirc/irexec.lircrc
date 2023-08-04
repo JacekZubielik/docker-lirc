@@ -1,0 +1,49 @@
+#DIETPI RASPDACEVO
+
+begin
+    prog = irexec
+    remote = evo-sabre
+    button = play
+    repeat = 0
+    config = /etc/lirc/lmscli.exp pause
+end
+
+begin
+    prog = irexec
+    remote = evo-sabre
+    button = left
+    repeat = 1
+    config =  /etc/lirc/lmscli.exp prev
+end
+
+begin
+    prog = irexec
+    remote = evo-sabre
+    button = right
+    repeat = 1
+    config =  /etc/lirc/lmscli.exp next
+end
+
+begin
+    prog = irexec
+    remote = evo-sabre
+    button = playleft
+    repeat = 1
+    config =  /etc/lirc/lmscli.exp bb
+end
+
+begin
+    prog = irexec
+    remote = evo-sabre
+    button = playright
+    repeat = 1
+    config =  /etc/lirc/lmscli.exp ff
+end
+
+begin
+    prog = irexec
+    remote = evo-sabre
+    button = ok
+    repeat = 1
+    config =  /etc/lirc/lmscli.exp stop
+end
